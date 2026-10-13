@@ -21,7 +21,7 @@ cargo install --path .
 ## Usage
 
 ```text
-Usage: commitbump --current X.Y.Z [--format version|changelog] [--date YYYY-MM-DD] [--strict]
+Usage: commitbump --current X.Y.Z [--format version|changelog|json] [--date YYYY-MM-DD] [--strict]
 ```
 
 The tool reads commit messages from standard input. The default output format is `version`; use `--format changelog` with a date to render release notes. Use `--strict` to stop at the first non-conventional commit instead of ignoring it.
@@ -39,7 +39,7 @@ commitbump --help
 | Option | Description |
 | --- | --- |
 | `--current X.Y.Z` | Required. The current version. |
-| `--format version\|changelog` | Output format, `version` by default. |
+| `--format version\|changelog\|json` | Output format, `version` by default. |
 | `--date YYYY-MM-DD` | Release date; required with, and only allowed with, `--format changelog`. |
 | `--strict` | Fail with exit code 2 at the first non-conventional commit instead of ignoring it. |
 | `--help` | Print the usage line. |
@@ -70,6 +70,16 @@ A breaking `feat` contributes to both the breaking-changes and features sections
 ## Output
 
 The default `version` format prints only the next version. If no commit warrants a release, either format prints `no release`. Changelogs include only nonempty groups, in this order: Breaking changes, Features, Fixes, and Performance. Scoped entries use bullets such as `- **api:** update endpoint`.
+
+## JSON output
+
+With `--format json`, commitbump prints one compact object describing the release decision. For the worked commit stream above with `--current 1.4.2`, it prints:
+
+```json
+{"release":true,"current":"1.4.2","next":"2.0.0","bump":"major","commits":4,"breaking":1,"features":2,"fixes":1,"performance":0}
+```
+
+`release` indicates whether a release is warranted; `current` is the supplied version, and `next` is the computed version or `null` when there is no release. `bump` is the level applied (`major`, `minor`, or `patch`); for a breaking commit on a `0.y.z` version, the existing bump rules apply `minor`. `commits` counts parsed conventional commits, excluding ignored non-conventional headers. `breaking` counts breaking commits, while `features`, `fixes`, and `performance` count commits of types `feat`, `fix`, and `perf`; a breaking `feat` counts in both `breaking` and `features`. When no release is warranted, `release` is `false` and `next` and `bump` are `null`; the command exits with code 1.
 
 ## Exit codes
 

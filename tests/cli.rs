@@ -2,7 +2,7 @@ use std::io::Cursor;
 
 use commitbump::run;
 
-const USAGE: &str = "Usage: commitbump --current X.Y.Z [--format version|changelog] [--date YYYY-MM-DD] [--strict]\n";
+const USAGE: &str = "Usage: commitbump --current X.Y.Z [--format version|changelog|json] [--date YYYY-MM-DD] [--strict]\n";
 
 fn invoke(args: &[&str], input: &[u8]) -> (i32, String, String) {
     let args = args
