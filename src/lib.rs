@@ -8,13 +8,14 @@ use parse::parse_commits;
 use render::{changelog, summary_json};
 use version::{Version, bump_level, next_version};
 
-const USAGE: &str = "Usage: commitbump --current X.Y.Z [--format version|changelog|json] [--date YYYY-MM-DD] [--strict]";
+const USAGE: &str = "Usage: commitbump --current X.Y.Z [--format version|changelog|json] [--date YYYY-MM-DD] [--scope NAME] [--strict]";
 
 #[derive(Default)]
 struct Options {
     current: Option<String>,
     format: Option<String>,
     date: Option<String>,
+    scope: Option<String>,
     strict: bool,
 }
 
@@ -48,6 +49,11 @@ pub fn run(
     if format != "version" && format != "changelog" && format != "json" {
         return report_error(stderr, &format!("invalid format \"{format}\""));
     }
+    if let Some(scope) = options.scope.as_deref()
+        && !valid_scope(scope)
+    {
+        return report_error(stderr, &format!("invalid scope \"{scope}\""));
+    }
 
     if options.date.is_some() && format != "changelog" {
         return report_error(stderr, "--date requires --format changelog");
@@ -66,10 +72,13 @@ pub fn run(
         return report_error(stderr, "input is not valid UTF-8");
     }
 
-    let commits = match parse_commits(&input, options.strict) {
+    let mut commits = match parse_commits(&input, options.strict) {
         Ok(commits) => commits,
         Err(error) => return report_error(stderr, &error.to_string()),
     };
+    if let Some(scope) = options.scope.as_deref() {
+        commits.retain(|commit| commit.scope.as_deref() == Some(scope));
+    }
     let Some(bump) = bump_level(current, &commits) else {
         if format == "json" {
             let _ = writeln!(stdout, "{}", summary_json(current, None, &commits));
@@ -101,7 +110,7 @@ fn parse_args(args: &[String]) -> Result<Options, String> {
 
     while index < args.len() {
         match args[index].as_str() {
-            "--current" | "--format" | "--date" => {
+            "--current" | "--format" | "--date" | "--scope" => {
                 let option = args[index].as_str();
                 let Some(value) = args.get(index + 1) else {
                     return Err(format!("missing value for {option}"));
@@ -110,6 +119,7 @@ fn parse_args(args: &[String]) -> Result<Options, String> {
                     "--current" => options.current = Some(value.clone()),
                     "--format" => options.format = Some(value.clone()),
                     "--date" => options.date = Some(value.clone()),
+                    "--scope" => options.scope = Some(value.clone()),
                     _ => unreachable!("matched a value-taking option"),
                 }
                 index += 2;
@@ -123,6 +133,13 @@ fn parse_args(args: &[String]) -> Result<Options, String> {
     }
 
     Ok(options)
+}
+
+fn valid_scope(value: &str) -> bool {
+    !value.is_empty()
+        && value
+            .bytes()
+            .all(|byte| byte.is_ascii_lowercase() || byte.is_ascii_digit() || byte == b'-')
 }
 
 fn valid_date(value: &str) -> bool {
