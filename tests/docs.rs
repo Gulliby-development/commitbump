@@ -1,6 +1,6 @@
 use std::fs;
 
-const USAGE: &str = "Usage: commitbump --current X.Y.Z [--format version|changelog|json] [--date YYYY-MM-DD] [--scope NAME] [--strict]";
+const USAGE: &str = "Usage: commitbump --current [v]X.Y.Z [--format version|changelog|json] [--date YYYY-MM-DD] [--scope NAME] [--strict]";
 
 const WORKED_CHANGELOG: &str = concat!(
     "## 2.0.0 - 2026-03-01\n",

@@ -8,7 +8,7 @@ use parse::parse_commits;
 use render::{changelog, summary_json};
 use version::{Version, bump_level, next_version};
 
-const USAGE: &str = "Usage: commitbump --current X.Y.Z [--format version|changelog|json] [--date YYYY-MM-DD] [--scope NAME] [--strict]";
+const USAGE: &str = "Usage: commitbump --current [v]X.Y.Z [--format version|changelog|json] [--date YYYY-MM-DD] [--scope NAME] [--strict]";
 
 #[derive(Default)]
 struct Options {
@@ -41,7 +41,9 @@ pub fn run(
     let Some(current_value) = options.current.as_deref() else {
         return report_error(stderr, "--current is required");
     };
-    let Some(current) = Version::parse(current_value) else {
+    let prefixed = current_value.starts_with('v');
+    let numeric_current_value = current_value.strip_prefix('v').unwrap_or(current_value);
+    let Some(current) = Version::parse(numeric_current_value) else {
         return report_error(stderr, &format!("invalid version \"{current_value}\""));
     };
 
@@ -81,7 +83,11 @@ pub fn run(
     }
     let Some(bump) = bump_level(current, &commits) else {
         if format == "json" {
-            let _ = writeln!(stdout, "{}", summary_json(current, None, &commits));
+            let _ = writeln!(
+                stdout,
+                "{}",
+                summary_json(current, prefixed, None, &commits)
+            );
         } else {
             let _ = writeln!(stdout, "no release");
         }
@@ -90,15 +96,16 @@ pub fn run(
     let next = next_version(current, bump);
 
     if format == "version" {
-        let _ = writeln!(stdout, "{next}");
+        let prefix = if prefixed { "v" } else { "" };
+        let _ = writeln!(stdout, "{prefix}{next}");
     } else if format == "json" {
         let _ = writeln!(
             stdout,
             "{}",
-            summary_json(current, Some((next, bump)), &commits)
+            summary_json(current, prefixed, Some((next, bump)), &commits)
         );
     } else if let Some(date) = options.date.as_deref() {
-        let _ = writeln!(stdout, "{}", changelog(next, date, &commits));
+        let _ = writeln!(stdout, "{}", changelog(next, prefixed, date, &commits));
     }
 
     0

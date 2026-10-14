@@ -214,7 +214,7 @@ fn reports_json_format_errors_without_stdout() {
 #[test]
 fn documents_the_json_output_contract() {
     let readme = fs::read_to_string("README.md").expect("README.md should be readable");
-    let usage = "Usage: commitbump --current X.Y.Z [--format version|changelog|json] [--date YYYY-MM-DD] [--scope NAME] [--strict]";
+    let usage = "Usage: commitbump --current [v]X.Y.Z [--format version|changelog|json] [--date YYYY-MM-DD] [--scope NAME] [--strict]";
     let fence = String::from(char::from(96)).repeat(3);
     let example_block = format!("{fence}json\n{README_EXAMPLE}\n{fence}");
 
