@@ -3,6 +3,7 @@ use crate::version::{Bump, Version};
 
 pub fn summary_json(
     current: Version,
+    prefixed: bool,
     release: Option<(Version, Bump)>,
     commits: &[Commit],
 ) -> String {
@@ -21,9 +22,11 @@ pub fn summary_json(
         .filter(|commit| commit.kind == CommitKind::Perf)
         .count();
 
+    let current = display_version(current, prefixed);
     match release {
         Some((next, bump)) => format!(
-            "{{\"release\":true,\"current\":\"{current}\",\"next\":\"{next}\",\"bump\":\"{}\",\"commits\":{commits_count},\"breaking\":{breaking_count},\"features\":{features_count},\"fixes\":{fixes_count},\"performance\":{performance_count}}}",
+            "{{\"release\":true,\"current\":\"{current}\",\"next\":\"{}\",\"bump\":\"{}\",\"commits\":{commits_count},\"breaking\":{breaking_count},\"features\":{features_count},\"fixes\":{fixes_count},\"performance\":{performance_count}}}",
+            display_version(next, prefixed),
             bump_name(bump)
         ),
         None => format!(
@@ -40,8 +43,8 @@ fn bump_name(bump: Bump) -> &'static str {
     }
 }
 
-pub fn changelog(next: Version, date: &str, commits: &[Commit]) -> String {
-    let mut lines = vec![format!("## {next} - {date}")];
+pub fn changelog(next: Version, prefixed: bool, date: &str, commits: &[Commit]) -> String {
+    let mut lines = vec![format!("## {} - {date}", display_version(next, prefixed))];
 
     append_group(
         &mut lines,
@@ -100,5 +103,13 @@ fn bullet(scope: Option<&str>, text: &str) -> String {
     match scope {
         Some(scope) => format!("- **{scope}:** {text}"),
         None => format!("- {text}"),
+    }
+}
+
+fn display_version(version: Version, prefixed: bool) -> String {
+    if prefixed {
+        format!("v{version}")
+    } else {
+        version.to_string()
     }
 }

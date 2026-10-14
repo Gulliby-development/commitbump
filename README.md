@@ -21,7 +21,7 @@ cargo install --path .
 ## Usage
 
 ```text
-Usage: commitbump --current X.Y.Z [--format version|changelog|json] [--date YYYY-MM-DD] [--scope NAME] [--strict]
+Usage: commitbump --current [v]X.Y.Z [--format version|changelog|json] [--date YYYY-MM-DD] [--scope NAME] [--strict]
 ```
 
 The tool reads commit messages from standard input. The default output format is `version`; use `--format changelog` with a date to render release notes. Use `--strict` to stop at the first non-conventional commit instead of ignoring it.
@@ -38,7 +38,7 @@ commitbump --help
 
 | Option | Description |
 | --- | --- |
-| `--current X.Y.Z` | Required. The current version. |
+| `--current [v]X.Y.Z` | Required. The current version, with an optional leading `v`; see [Tag prefix](#tag-prefix). |
 | `--format version\|changelog\|json` | Output format, `version` by default. |
 | `--date YYYY-MM-DD` | Release date; required with, and only allowed with, `--format changelog`. |
 | `--scope NAME` | Only use commits whose scope is exactly `NAME`; see [Scope filter](#scope-filter). |
@@ -105,6 +105,10 @@ feat: add --json flag
 | `0` | A version or changelog was produced, or `--help` was requested. |
 | `1` | No release is warranted. |
 | `2` | Arguments, input, or (in strict mode) a commit header are invalid. |
+
+## Tag prefix
+
+Git tags are often written `v1.4.2`. `--current` accepts a lowercase `v` in front of the three numbers, and the prefix is kept in everything the tool prints, so the output can be used as the next tag. With the commit stream of the scope filter section and `--current v1.4.2`, the default format prints `v2.0.0`, the changelog heading is `## v2.0.0 - 2026-03-01` and the JSON fields `current` and `next` read `v1.4.2` and `v2.0.0`. Without the `v` nothing changes. Only a single lowercase `v` is accepted; `V1.4.2`, `vv1.4.2`, `v 1.4.2` and a lone `v` are invalid versions (exit code 2). `no release` is printed as before.
 
 ## Example
 
