@@ -1,5 +1,5 @@
 use crate::parse::{Commit, CommitKind};
-use crate::version::{Bump, Version};
+use crate::version::{Bump, Version, bump_for_commit};
 
 pub fn summary_json(
     current: Version,
@@ -41,6 +41,34 @@ fn bump_name(bump: Bump) -> &'static str {
         Bump::Minor => "minor",
         Bump::Patch => "patch",
     }
+}
+
+pub fn reasons(
+    prefixed: bool,
+    current: Version,
+    next: Version,
+    bump: Bump,
+    commits: &[Commit],
+) -> String {
+    let mut lines = vec![
+        format!("next     {}", display_version(next, prefixed)),
+        format!("bump     {}", bump_name(bump)),
+    ];
+    let causes: Vec<&Commit> = commits
+        .iter()
+        .filter(|commit| bump_for_commit(current, commit) == Some(bump))
+        .collect();
+    lines.extend(
+        causes
+            .iter()
+            .take(5)
+            .map(|commit| format!("because  {}", commit.header.trim_end_matches([' ', '\t']))),
+    );
+    if causes.len() > 5 {
+        lines.push(format!("more     {}", causes.len() - 5));
+    }
+
+    lines.join("\n")
 }
 
 pub fn changelog(next: Version, prefixed: bool, date: &str, commits: &[Commit]) -> String {

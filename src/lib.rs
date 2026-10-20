@@ -5,10 +5,10 @@ pub mod version;
 use std::io::{Read, Write};
 
 use parse::parse_commits;
-use render::{changelog, summary_json};
+use render::{changelog, reasons, summary_json};
 use version::{Version, bump_level, next_version};
 
-const USAGE: &str = "Usage: commitbump --current [v]X.Y.Z [--format version|changelog|json] [--date YYYY-MM-DD] [--scope NAME] [--strict]";
+const USAGE: &str = "Usage: commitbump --current [v]X.Y.Z [--format version|changelog|json|why] [--date YYYY-MM-DD] [--scope NAME] [--strict]";
 
 #[derive(Default)]
 struct Options {
@@ -48,7 +48,7 @@ pub fn run(
     };
 
     let format = options.format.as_deref().unwrap_or("version");
-    if format != "version" && format != "changelog" && format != "json" {
+    if format != "version" && format != "changelog" && format != "json" && format != "why" {
         return report_error(stderr, &format!("invalid format \"{format}\""));
     }
     if let Some(scope) = options.scope.as_deref()
@@ -103,6 +103,12 @@ pub fn run(
             stdout,
             "{}",
             summary_json(current, prefixed, Some((next, bump)), &commits)
+        );
+    } else if format == "why" {
+        let _ = writeln!(
+            stdout,
+            "{}",
+            reasons(prefixed, current, next, bump, &commits)
         );
     } else if let Some(date) = options.date.as_deref() {
         let _ = writeln!(stdout, "{}", changelog(next, prefixed, date, &commits));
