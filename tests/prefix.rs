@@ -247,7 +247,7 @@ fn accepts_zero_and_maximum_numeric_components_with_prefix() {
 
 #[test]
 fn documents_the_prefix_in_help_and_readme() {
-    let usage = "Usage: commitbump --current [v]X.Y.Z [--format version|changelog|json] [--date YYYY-MM-DD] [--scope NAME] [--strict]";
+    let usage = "Usage: commitbump --current [v]X.Y.Z [--format version|changelog|json|why] [--date YYYY-MM-DD] [--scope NAME] [--strict]";
     assert_eq!(
         invoke(&["--help"], b""),
         (0, format!("{usage}\n"), String::new())

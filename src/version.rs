@@ -236,7 +236,7 @@ pub fn bump_level(current: Version, commits: &[Commit]) -> Option<Bump> {
         .max()
 }
 
-fn bump_for_commit(current: Version, commit: &Commit) -> Option<Bump> {
+pub fn bump_for_commit(current: Version, commit: &Commit) -> Option<Bump> {
     if commit.breaking {
         return Some(if current.major == 0 {
             Bump::Minor
