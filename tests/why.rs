@@ -138,7 +138,7 @@ fn date_is_still_rejected_with_the_why_format() {
         invoke(&["--help"], b""),
         (
             0,
-            "Usage: commitbump --current [v]X.Y.Z [--format version|changelog|json|why] [--date YYYY-MM-DD] [--scope NAME] [--strict]\n".to_owned(),
+            "Usage: commitbump --current [v]X.Y.Z [--format version|changelog|json|why] [--date YYYY-MM-DD] [--scope NAME] [--issues] [--strict]\n".to_owned(),
             String::new()
         )
     );

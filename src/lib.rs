@@ -8,7 +8,7 @@ use parse::parse_commits;
 use render::{changelog, reasons, summary_json};
 use version::{Version, bump_level, next_version};
 
-const USAGE: &str = "Usage: commitbump --current [v]X.Y.Z [--format version|changelog|json|why] [--date YYYY-MM-DD] [--scope NAME] [--strict]";
+const USAGE: &str = "Usage: commitbump --current [v]X.Y.Z [--format version|changelog|json|why] [--date YYYY-MM-DD] [--scope NAME] [--issues] [--strict]";
 
 #[derive(Default)]
 struct Options {
@@ -16,6 +16,7 @@ struct Options {
     format: Option<String>,
     date: Option<String>,
     scope: Option<String>,
+    issues: bool,
     strict: bool,
 }
 
@@ -59,6 +60,9 @@ pub fn run(
 
     if options.date.is_some() && format != "changelog" {
         return report_error(stderr, "--date requires --format changelog");
+    }
+    if options.issues && format != "changelog" {
+        return report_error(stderr, "--issues requires --format changelog");
     }
     if format == "changelog" && options.date.is_none() {
         return report_error(stderr, "--format changelog requires --date");
@@ -111,7 +115,11 @@ pub fn run(
             reasons(prefixed, current, next, bump, &commits)
         );
     } else if let Some(date) = options.date.as_deref() {
-        let _ = writeln!(stdout, "{}", changelog(next, prefixed, date, &commits));
+        let _ = writeln!(
+            stdout,
+            "{}",
+            changelog(next, prefixed, date, &commits, options.issues)
+        );
     }
 
     0
@@ -136,6 +144,10 @@ fn parse_args(args: &[String]) -> Result<Options, String> {
                     _ => unreachable!("matched a value-taking option"),
                 }
                 index += 2;
+            }
+            "--issues" => {
+                options.issues = true;
+                index += 1;
             }
             "--strict" => {
                 options.strict = true;
