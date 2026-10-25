@@ -42,6 +42,7 @@ pub struct Commit {
     pub description: String,
     pub breaking: bool,
     pub notes: Vec<String>,
+    pub issues: Vec<u32>,
 }
 
 #[derive(Clone, Debug, Eq, PartialEq)]
@@ -165,6 +166,15 @@ fn parse_conventional_commit(header: &str, body: &[&str]) -> Option<Commit> {
         notes.push(description.to_owned());
     }
 
+    let mut issues: Vec<u32> = Vec::new();
+    for line in body {
+        if let Some(number) = issue_number(line)
+            && !issues.contains(&number)
+        {
+            issues.push(number);
+        }
+    }
+
     Some(Commit {
         header: header.to_owned(),
         kind,
@@ -172,7 +182,24 @@ fn parse_conventional_commit(header: &str, body: &[&str]) -> Option<Commit> {
         description: description.to_owned(),
         breaking: breaking_marker || !notes.is_empty(),
         notes,
+        issues,
     })
+}
+
+/// Reads `Closes #N`, `Fixes #N` or `Resolves #N` with N from 1 to 999999 and no leading zero.
+fn issue_number(line: &str) -> Option<u32> {
+    let rest = ["Closes #", "Fixes #", "Resolves #"]
+        .iter()
+        .find_map(|prefix| line.strip_prefix(prefix))?;
+    let digits = rest.trim_end_matches([' ', '\t']);
+    if digits.is_empty()
+        || digits.len() > 6
+        || digits.starts_with('0')
+        || !digits.bytes().all(|byte| byte.is_ascii_digit())
+    {
+        return None;
+    }
+    digits.parse().ok()
 }
 
 fn is_blank(line: &str) -> bool {

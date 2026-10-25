@@ -71,7 +71,20 @@ pub fn reasons(
     lines.join("\n")
 }
 
-pub fn changelog(next: Version, prefixed: bool, date: &str, commits: &[Commit]) -> String {
+pub fn changelog(
+    next: Version,
+    prefixed: bool,
+    date: &str,
+    commits: &[Commit],
+    with_issues: bool,
+) -> String {
+    let issues_of = |commit: &Commit| -> Vec<u32> {
+        if with_issues {
+            commit.issues.clone()
+        } else {
+            Vec::new()
+        }
+    };
     let mut lines = vec![format!("## {} - {date}", display_version(next, prefixed))];
 
     append_group(
@@ -84,7 +97,7 @@ pub fn changelog(next: Version, prefixed: bool, date: &str, commits: &[Commit]) 
                 commit
                     .notes
                     .iter()
-                    .map(move |note| bullet(commit.scope.as_deref(), note))
+                    .map(move |note| bullet(commit.scope.as_deref(), note, &issues_of(commit)))
             }),
     );
     append_group(
@@ -93,7 +106,13 @@ pub fn changelog(next: Version, prefixed: bool, date: &str, commits: &[Commit]) 
         commits
             .iter()
             .filter(|commit| commit.kind == CommitKind::Feat)
-            .map(|commit| bullet(commit.scope.as_deref(), &commit.description)),
+            .map(|commit| {
+                bullet(
+                    commit.scope.as_deref(),
+                    &commit.description,
+                    &issues_of(commit),
+                )
+            }),
     );
     append_group(
         &mut lines,
@@ -101,7 +120,13 @@ pub fn changelog(next: Version, prefixed: bool, date: &str, commits: &[Commit]) 
         commits
             .iter()
             .filter(|commit| commit.kind == CommitKind::Fix)
-            .map(|commit| bullet(commit.scope.as_deref(), &commit.description)),
+            .map(|commit| {
+                bullet(
+                    commit.scope.as_deref(),
+                    &commit.description,
+                    &issues_of(commit),
+                )
+            }),
     );
     append_group(
         &mut lines,
@@ -109,7 +134,13 @@ pub fn changelog(next: Version, prefixed: bool, date: &str, commits: &[Commit]) 
         commits
             .iter()
             .filter(|commit| commit.kind == CommitKind::Perf)
-            .map(|commit| bullet(commit.scope.as_deref(), &commit.description)),
+            .map(|commit| {
+                bullet(
+                    commit.scope.as_deref(),
+                    &commit.description,
+                    &issues_of(commit),
+                )
+            }),
     );
 
     lines.join("\n")
@@ -127,10 +158,16 @@ fn append_group(lines: &mut Vec<String>, title: &str, bullets: impl IntoIterator
     lines.extend(bullets);
 }
 
-fn bullet(scope: Option<&str>, text: &str) -> String {
+fn bullet(scope: Option<&str>, text: &str, issues: &[u32]) -> String {
+    let references = if issues.is_empty() {
+        String::new()
+    } else {
+        let numbers: Vec<String> = issues.iter().map(|number| format!("#{number}")).collect();
+        format!(" ({})", numbers.join(", "))
+    };
     match scope {
-        Some(scope) => format!("- **{scope}:** {text}"),
-        None => format!("- {text}"),
+        Some(scope) => format!("- **{scope}:** {text}{references}"),
+        None => format!("- {text}{references}"),
     }
 }
 

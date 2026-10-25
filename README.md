@@ -21,7 +21,7 @@ cargo install --path .
 ## Usage
 
 ```text
-Usage: commitbump --current [v]X.Y.Z [--format version|changelog|json|why] [--date YYYY-MM-DD] [--scope NAME] [--strict]
+Usage: commitbump --current [v]X.Y.Z [--format version|changelog|json|why] [--date YYYY-MM-DD] [--scope NAME] [--issues] [--strict]
 ```
 
 The tool reads commit messages from standard input. The default output format is `version`; use `--format changelog` with a date to render release notes. Use `--strict` to stop at the first non-conventional commit instead of ignoring it.
@@ -42,6 +42,7 @@ commitbump --help
 | `--format version\|changelog\|json\|why` | Output format, `version` by default; see [Reasons](#reasons). |
 | `--date YYYY-MM-DD` | Release date; required with, and only allowed with, `--format changelog`. |
 | `--scope NAME` | Only use commits whose scope is exactly `NAME`; see [Scope filter](#scope-filter). |
+| `--issues` | Add the issue numbers of `Closes #N`, `Fixes #N` and `Resolves #N` footer lines to the changelog bullets; only allowed with `--format changelog`; see [Issue references](#issue-references). |
 | `--strict` | Fail with exit code 2 at the first non-conventional commit instead of ignoring it. |
 | `--help` | Print the usage line. |
 
@@ -120,6 +121,52 @@ For the commit stream of the scope filter section and `--current 1.4.2`:
 next     2.0.0
 bump     major
 because  feat(api)!: drop the v1 endpoints
+```
+
+## Issue references
+
+With `--issues` and `--format changelog`, commitbump adds the issue numbers of a commit to its changelog bullets. An issue footer is a line of the commit body (not the header) that is exactly `Closes #N`, `Fixes #N` or `Resolves #N`, where N is a number from 1 to 999999 without leading zeros; spaces and tabs at the end of the line are ignored, and the words are case-sensitive. A commit keeps each number once, in the order of its lines. Every changelog bullet of the commit, including a breaking-change bullet, ends with the numbers, as in ` (#12, #34)`. Commits that do not appear in the changelog, and lines of any other shape, are ignored. Without `--issues` the changelog is unchanged, and `--issues` with another format is an argument error with exit code 2.
+
+For this commit stream and `--current 1.4.2 --format changelog --date 2026-03-01 --issues`:
+
+```text
+fix(db): close the pool
+
+Closes #12
+Fixes #34
+Closes #12
+----
+feat: add paging
+
+Resolves #7
+----
+feat(api)!: drop the v1 endpoints
+
+BREAKING CHANGE: v1 endpoints are removed
+Closes #5
+----
+docs: update readme
+
+Closes #99
+```
+
+the output is:
+
+```text
+## 2.0.0 - 2026-03-01
+
+### Breaking changes
+
+- **api:** v1 endpoints are removed (#5)
+
+### Features
+
+- add paging (#7)
+- **api:** drop the v1 endpoints (#5)
+
+### Fixes
+
+- **db:** close the pool (#12, #34)
 ```
 
 ## Example
